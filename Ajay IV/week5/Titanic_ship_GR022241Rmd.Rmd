@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+library(ggplot2) # includes ggplot2 package
+library(dplyr) # includes dplyr 
+
+ship <- read.csv("/Users/ajaykommineni/Downloads/train_and_test2.csv") # file path is set to variable and reads the file
+
+str(ship) 
+# To print the structure of the data set
+head(ship) 
+# displays the top few columns of the data set
+summary(ship)
+#shows all the statics of the data 
+```
+
+# 1. Survival rate by passenger class
+```{r}
+# Survival rate by passenger class
+
+# Create the survival rate by passenger class plot
+ggplot(ship, aes(x = factor(Pclass), fill = factor(X2urvived))) + 
+  # plotting  Pclass as x-axis and X2urvived as fill
+  geom_bar(position = "fill") +  
+  # Creates bars with proportions (0 to 1)
+  scale_y_continuous(labels = scales::percent) +  # Convert y-axis proportions to percentages
+  scale_fill_manual(values = c("0" = "red", "1" = "green"), 
+                    # Custom colors for survival status
+                    labels = c("Did Not Survive", "Survived")) + 
+  # Add labels for the legend
+  labs(title = "Survival Rate by Passenger Class",  
+       # Adding  chart title and labels of X and Y axis
+       x = "Passenger Class",
+       y = "Percentage", 
+       fill = "Survival Status") +
+  theme_minimal()
+
+
+#Findings
+# The survival rate for second-class passengers is lower than that of first-class passengers but higher than that of third-class passengers. # A far greater percentage of first-class passengers survived than those in second and third classes.
+# The percentage of third-class passengers who survived was far lower.
+# During the evacuation, third-class passengers were probably given the least priority because they were situated on the lower decks, further away from the lifeboats.
+```
+
+# 2. Survival rate by  age of the passenger
+
+```{r}
+# Age distribution by survival
+ggplot(ship, aes(x = Age, fill = factor(X2urvived))) +
+  # ggplot with data and uses aes mapping x-axis to age and the fills accordingly with factor(X2urvived)
+  geom_histogram(binwidth = 5, position = "identity", alpha = 0.6) +
+  # Create histogram with binwidth of 5, overlapping bars, and transparency
+  scale_fill_manual(values = c("0" = "red", "1" = "green"), 
+                    #  colors for survival status 
+                    labels = c("Did Not Survive", "Survived")) +
+  
+   #Add labels for the legend
+  labs(title = "Age Distribution by Survival",
+       # adding labels to the x-axis, y-axis and the title
+       x = "Age",
+       y = "Count",
+       fill = "Survival Status") +
+  theme_bw()
+
+
+#Findings
+# The age distribution of the survivors is displayed in the plot. The individuals who survived were obviously between the ages of 20 and 40. Additionally, most infants between the ages of 0 and 10 survive. It demonstrates that they received top priority. This graphic is often useful for understanding the distribution of population age versus survival.
+```
+
+#3 show the counts of survival by number of parents/children aboard
+```{r}
+# Convert the 'Survived' column to a factor with meaningful labels
+ship$Survived <- factor(ship$X2urvived, labels = c("No", "Yes"))
+# Create the plot
+ggplot(ship, aes(x = Parch, fill = Survived)) +
+  # Use a bar plot to show counts of survival by number of parents/children aboard
+  geom_bar(position = "stack") +
+  # Add labels and title to the plot
+  labs(
+    title = "Survival by Number of Parents/Children Aboard",
+    x = "Number of Parents/Children Aboard (Parch)",
+    y = "Count",
+    fill = "Survived"
+  ) +
+  # Use a minimal theme for a clean look
+  theme_minimal() 
+#findings
+#The plot indicates that survival rates were significantly impacted by family size, or the number of parents and children on board and Traveling Alone has Lower survival rates.Traveling with Family: Higher survival rates, especially for larger families. This is consistent with historical reports of the Titanic disaster, which show that families traveling together had greater access to lifeboats and that women and children were given priority during evacuation.
+```
+
+
+#4 Comprehensive Facet Grid of Survival Factors
+
+```{r}
+# Convert the 'X2urvived' column to a factor with levels for survival status
+ship$urvived <- factor(ship$X2urvived, labels = c("No", "Yes"))
+
+# Create the plot
+ggplot(ship) +  
+  #  x = Age, y = Fare, color = Survival status
+  geom_point(aes(x = Age, y = Fare, color = urvived), alpha = 0.7) +
+  # Create a facet grid: Rows = Sex, Columns = Pclass
+  facet_grid(Sex ~ Pclass) +
+  # Adding  plot labels and title to the plot
+  labs(
+    x = "Age", 
+    y = "Fare", 
+    color = "Survived", 
+    title = "Survival, Age, and Fare Across Gender and Passenger Class"
+  ) +
+  theme(
+    strip.background = element_rect(fill = "gray"),  
+    # Light gray background for facet labels
+    strip.text = element_text(color = "black")        
+    # Black text for facet labels
+  )
+
+#findings
+# I made use of every variable in the dataframe in this plot. The x-axis represents the fare variable, while the y-axis represents the age variable. The survival in all variables format is revealed by charting the survival variable using the plot's color, and all plots are ultimately separated according to classes.
+#The survival rate was higher for females than for males.Passenger Class: The survival rates of the first and second classes were higher than those of the third class. The survival rate was lower for senior passengers and greater for children.Higher survival rates were associated with higher fares, which indicate a higher socioeconomic position.
+```
+
+
+
+#5 Create the survival rate by port of embarkation plot
+```{r}
+# Creating the survival rate by port of embarkation plot
+ggplot(ship, aes(x = Embarked, fill = factor(X2urvived))) +  
+  # Use Embarked as x-axis and Survived as fill
+   # Use geom_bar with position = "fill" to create a proportional stacked bar chart
+  geom_bar(position = "fill") + 
+  # Create stacked bars with proportions (0 to 1)
+  scale_fill_manual(values = c("0" = "red", "1" = "green"),  # Custom colors for survival status
+                    labels = c("Did Not Survive", "Survived")) + 
+  # Add labels for the legend
+  scale_y_continuous(labels = scales::percent) +  # Convert y-axis proportions to percentages
+  labs(title = "Survival Rate by Port of Embarkation", x = "Port of Embarkation (0 = Cherbourg; 1 = Queenstown; 2 = Southampton)", y = "Proportion", fill = "Survived") + # Label for the legend
+  theme(legend.position = "bottom")  # Move legend to the bottom
+
+#findings
+#plot clearly shows that survival doesn't depend on the port of embarkation
+#THe Queenstown, Southampton, and Cherbourg had the lowest survival rates. This implies that variations in passenger demographics, ticket class distribution, or other factors may have affected survival outcomes at the port of embarkation.
+#plot clearly shows that survival doesn't depend on the port of embarkation
+```
+
+
+
+
+
+
+
+
+
+
+
+

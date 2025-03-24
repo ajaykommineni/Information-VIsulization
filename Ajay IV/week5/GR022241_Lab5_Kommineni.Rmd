@@ -1,0 +1,172 @@
+---
+title: "Lab5_Kommineni_GR022241"
+output:
+  word_document: default
+  html_document: default
+  pdf_document:
+    always_allow_html: true
+date: "2025-02-27"
+
+---
+
+
+
+Histogram
+##
+
+```{r}
+# Load the Plotly library for creating interactive visualizations.
+library(plotly)
+
+# Load the dplyr library for data manipulation (e.g., filtering, grouping, summarizing).
+library(dplyr)
+```
+
+#Creating a New random data 
+```{r}
+# Set a seed for reproducibility. This ensures that random data generation is consistent.
+set.seed(123)
+#Creating a data set of car sales, including mileage, price, and sales volume. The dataset will have 40 rows.
+# Create a list of real car names
+car_names <- c("BMW M5 CS ","Toyota Camry", "Honda Accord", "Ford Mustang", "Chevrolet Silverado", 
+               "Tesla Model S", "BMW X5", "Audi A4", "BMW M3 ")
+
+# Create a synthetic dataset
+car_sales_data <- data.frame(
+  Car_Name = sample(car_names, 40, replace = TRUE), 
+  # This will  assign car names in random 
+  Year = sample(2018:2023, 40, replace = TRUE),    
+  # Randomly assigning years between 2018 and 2023
+  Mileage = runif(40, min = 10, max = 50),         
+  #  random mileage values between 10 and 50 MPG
+  Price = runif(40, min = 20000, max = 60000),     
+  #  random price values between $20,000 and $60,000
+  Sales_Volume = sample(100:500, 40, replace = TRUE) 
+  # random sales volume between 100 and 500 units
+)
+# Display the first few rows of the dataset
+head(car_sales_data)
+tail(car_sales_data)
+```
+# Create a scatter plot using Plotly.
+#Scatter plot comparing mileage and price
+```{r}
+#scatter plot comparing mileage and price
+# Creating a scatter plot using Plotly.
+scatter_plot <- plot_ly(
+  data = car_sales_data, 
+  x = ~Mileage,          
+  y = ~Price,            
+  color = ~Car_Name,     
+  # Color points by Car_Name to differentiate car models.
+  type = "scatter",     
+  # Specify the plot type as a scatter plot.
+  mode = "markers",     
+  # Use markers to represent data points.
+  text = ~paste("Car:", Car_Name, "<br>Year:", Year), 
+  # Add hover text to display car name and year.
+  marker = list(size = 10) 
+  # Customize marker size for better visibility.
+) %>%
+  layout(
+    title = "Mileage vs. Price by Car",
+    # Adding   title to the plot and labels.
+    xaxis = list(title = "Mileage (MPG)"), 
+    yaxis = list(title = "Price ($)")     
+  )
+
+# Display the scatter plot.
+scatter_plot
+
+#Findings
+#Generally speaking, cars with higher mileage (better fuel efficiency) are typically less expensive. Given that fuel-efficient vehicles are frequently less expensive, this is to be expected.
+#The Tesla Model S, are electric vehicles they have  high pricing and high mileage.
+#Vehicles such as the Honda Accord and Toyota Camry are grouped in the middle of the price and mileage ranges, they have good fuel economy.
+```
+
+
+
+#Histogram
+#histogram shows  of  Mileage  all cars.
+
+{r}
+
+```{r}
+# Create a histogram using Plotly.
+histogram <- plot_ly(
+  data = car_sales_data,
+  # Using  the car_sales_data dataset foom above .
+  x = ~Mileage,         # Set the x-axis to Mileage.
+  type = "histogram",   # Specify the plot type as a histogram.
+  nbinsx = 10,          
+  # Set the number of bins to 10 for the histogram.
+  marker = list(color = "lightblue", line = list(color = "black", width = 1)) 
+  # Customize bar color and border.
+) %>%
+  layout(
+    title = "Distribution of Mileage",
+    # Add a title to the plot anf labels.
+    xaxis = list(title = "Mileage (MPG)"), 
+    yaxis = list(title = "Frequency")      
+  )
+# Display the histogram.
+histogram
+#Findings
+# Most cars have a mileage of between 25 and 40 miles per gallon, The 30-35 MPG range has the largest frequency of cars, suggesting that this is the dataset's most prevalent fuel economy level.Extreme instances are represented by a small number of cars with extremely low mileage (less than 15 MPG) or extremely high mileage (more than 45 MPG).
+```
+
+#Bar Chart
+#Bar chart shows the total Sales of diffrent Cars
+
+```{r}
+# Aggregate sales volume by car name.
+sales_by_car <- car_sales_data %>%
+  group_by(Car_Name) %>%              
+  # Group the data by Car_Name.
+  summarize(Total_Sales = sum(Sales_Volume))
+# Calculate total sales for each car.
+
+# Create a bar chart using Plotly.
+bar_chart <- plot_ly(
+  #total Sales_Volume vs Car_Name
+  data = sales_by_car, 
+  x = ~Car_Name,       
+  y = ~Total_Sales,    
+  type = "bar",        
+  # Specify the plot type as a bar chart.
+  marker = list(color = "lightgreen") 
+  #  bar color.
+) %>%
+  layout(
+    title = "Total Sales Volume by Car", # Adding a title to the plot and lables .
+    xaxis = list(title = "Car Name"),   
+    yaxis = list(title = "Total Sales Volume") 
+  )
+
+# Display the bar chart.
+bar_chart
+#Findings 
+#As it is a random data the cars like BMW M3 showing huge sale despite of its less mileage 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,168 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+```{r}
+library(readxl)  
+# Load the readxl package to read Excel files
+library(ggplot2)
+library(maps)    
+# Load maps for U.S. state boundary data
+library(dplyr)  
+# Load dplyr for data manipulation
+library(tidyr)   
+# Load tidyr for unnesting data
+# Read the Excel file
+```
+
+```{r}
+# reads the file from file path and loads to sales_data variable
+sales_data <- read_excel("/Users/ajaykommineni/Downloads/Sales Reps.xlsx")
+```
+
+
+```{r}
+setwd("/Users/ajaykommineni/Downloads")
+states_data <- read_excel("Sales Reps.xlsx", sheet = "States")
+#Reads data from an Excel file. Here, it reads the "States" and "Reps" sheets.
+# Read the "States" sheet
+# Read the "Reps" sheet
+reps_data <- read_excel("Sales Reps.xlsx", sheet = "Reps")
+
+# Check column names
+colnames(states_data)  
+# Should be: "U.S. States and Territories", "Abbreviations", "Sales Rep"
+# Print column names of states_data  and reps_data
+colnames(reps_data)    
+```
+
+
+```{r}
+# Rename columns to "Number" and "Name"
+#There is no names given in the data
+#This will help to add column names 
+colnames(reps_data) <- c("Number", "Name")
+colnames(states_data) <- c("State", "Abbreviation", "Sales_Rep")
+# Rename columns to "State", "Abbreviation", "Sales_Rep"
+# Filter out Canadian provinces and territories
+```
+
+
+```{r}
+# To get only Us we need to Filter out Canadian provinces and territories
+canadian_abbreviations <- c("AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT") #List of Canadian abbreviations
+states_data <- states_data %>%
+  filter(!Abbreviation %in% canadian_abbreviations)
+# Remove rows where Abbreviation is in the Canadian list
+# Clean and merge data
+# Clean and prepare the Sales_Rep column
+states_data <- states_data %>%
+  mutate(Sales_Rep = strsplit(as.character(Sales_Rep), " and ")) %>% 
+  # Split "Sales_Rep" by " and "
+  unnest(Sales_Rep) %>%  
+  # Unnest the list into separate rows (e.g., "1 and 2" becomes two rows: 1 and 2)
+  mutate(Sales_Rep = as.numeric(Sales_Rep)) 
+# Convert Sales_Rep to numeric 
+# Merge states_data with reps_data to get sales rep names
+combined_data <- states_data %>%
+  left_join(reps_data, by = c("Sales_Rep" = "Number"))  # Join on Sales_Rep (states_data) and Number (reps_data)
+```
+
+
+```{r}
+# Prepare U.S. map data
+us_map <- map_data("state")
+# Get U.S. state boundary data from the maps package
+combined_data <- combined_data %>%
+  mutate(State = tolower(State))
+# Convert state names to lowercase to match us_map's "region" column
+# Merge U.S. map data with sales rep data
+us_map <- us_map %>%
+  left_join(combined_data, by = c("region" = "State"))
+# Join on region (us_map) and State (combined_data)
+# Plot the map (U.S. only)
+ggplot() +
+#ploting a map of the U.S., with each state colored by its assigned sales rep.
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group, fill = Name), color = "white") +
+#Draws polygons (e.g., U.S. states) on the map, colored by sales rep.
+  coord_fixed(1.3) +  
+  #Ensures the map has a fixed aspect ratio to prevent distortion
+  theme_minimal() +
+  labs(title = "Sales Representatives by U.S. Region", fill = "Sales Rep") +
+  # Adding  title and legend label
+  theme(legend.position = "bottom")
+ # Move the legend to the bottom of the plot
+```
+# Plot the map (U.S. only) with state abbreviations
+```{r}
+#Calculate the center of each state for placing abbreviations
+state_centers <- us_map %>%
+  group_by(region) %>%
+  summarize(
+    long = mean(long),  
+    # Calculate the mean longitude (center of the state)
+    lat = mean(lat)     
+    # Calculate the mean latitude (center of the state)
+  ) %>%
+  left_join(combined_data, by = c("region" = "State")) 
+# Add abbreviations to the centers
+
+# Plot the map (U.S. only) with state abbreviations
+ggplot() +
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group, fill = Name), color = "white") +  # Draw U.S. states, colored by sales rep
+  geom_text(data = state_centers, aes(x = long, y = lat, label = Abbreviation), color = "black", size = 3) +  
+  # Add state abbreviations
+  coord_fixed(1.3) +  
+  theme_minimal() +   
+  labs(title = "Sales Representatives by U.S. Region", fill = "Sales Rep") + 
+  theme(legend.position = "bottom") 
+
+```
+
+
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(maps)
+library(dplyr)
+
+# Filter Kentucky data
+kentucky_data <- states_data %>%
+  filter(State == "Kentucky") %>%
+  mutate(Sales_Rep = ifelse(Abbreviation %in% c("Boone", "Campbell", "Kenton", "Pendleton", "Gant", "Gallatin",  "Carroll", "Owen", "Henry", "Trimble", "Oldham", "Jefferson", "Shelby", "Franklin", "Scott", "Woodford", "Fayette", "Jessmine"), 2, 1))
+
+# Get Kentucky county map data
+kentucky_map <- map_data("county") %>%
+  filter(region == "kentucky") %>%
+  left_join(kentucky_data, by = c("subregion" = "Abbreviation"))
+
+# Plot the map
+ggplot() +
+  geom_polygon(data = kentucky_map, aes(x = long, y = lat, group = group, fill = factor(Sales_Rep)), color = "white") +
+  scale_fill_manual(values = c("1" = "green", "2" = "red")) +  # Green for Rep 1, Red for Rep 2
+  coord_fixed(1.3) +  # Fix aspect ratio
+  theme_minimal() +   # Minimal theme
+  labs(title = "Kentucky Sales Representatives by County", fill = "Sales Rep") +  # Title and legend
+  theme(legend.position = "bottom")  # Legend at the bottom
+```
+

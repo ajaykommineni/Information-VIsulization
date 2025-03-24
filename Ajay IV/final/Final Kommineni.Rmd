@@ -1,0 +1,390 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+#FIFA World Cup(1930-2014) Project
+```{r}
+# Loading all  necessary libraries
+library(ggplot2)
+#ggplot2 for creating advanced visualizations (e.g., bar plots, line charts, etc.)
+library(dplyr)
+#dplyr for data manipulation (e.g., filtering, grouping, summarizing data)
+library(plotly)
+#plotly for creating interactive visualizations
+library(viridis)
+#Load viridis for color palettes that are visually appealing.
+library(maps)
+# maps for geographic data and map-based visualizations
+library(ggthemes)
+# ggthemes for additional themes and styles for ggplot2 plots
+library(tidyverse)   
+# For data manipulation and visualization
+# tidyverse is a collection of R packages designed for data science workflows
+```
+# Took the data from kaggle (1930-2014)
+#FIFA World Cup(1930-2014)
+```{r}
+#This  sets the working directory in R to the specified path.
+setwd("/Users/ajaykommineni/Downloads/archive")
+#This is useful when we want to load or save files without specifying the full path every time.
+
+wc_matches <- read.csv("wcmatches.csv")
+#reads the CSV file named "wcmatches.csv" from the working directory.
+# View the first few rows of the dataset
+head(wc_matches)
+
+# Summary statistics
+summary(wc_matches)
+#it shows statistics like minimum, maximum, mean, median, and quartiles.
+str(wc_matches)
+#It shows the number of rows and columns, the data type of each column, and a preview of the data.
+# Check for missing values
+colSums(is.na(wc_matches))
+# - The `is.na()` function checks for missing values (`NA`) in the data frame.
+# - `colSums()` sums up the number of missing values for each column.
+# - This helps identify which columns have missing data and how many missing values are present.
+```
+
+```{r}
+#This  sets the working directory in R to the specified path.
+setwd("/Users/ajaykommineni/Downloads/archive")
+#This is useful when we want to load or save files without specifying the full path every time
+# Load the dataset
+worldcups <- read.csv("worldcups.csv")
+# View the first few rows of the dataset
+head(worldcups)
+
+# Summary statistics
+summary(worldcups)
+str(worldcups)
+
+# Check for missing values
+colSums(is.na(worldcups))
+```
+
+## After analysing  the data of FIFA world cup. These are some visualization
+
+# --------------------------
+# Visualization 1: World Cup Winners (Bar Chart)
+#bar plot showing the number of FIFA World Cup wins by country
+# --------------------------
+```{r}
+winners <- worldcups %>%
+#Grouping  the data by the `winner` column (countries that have won the World Cup)
+  group_by(winner) %>%
+  summarize(Wins = n()) %>%
+#this will count the number of wins for each country using `n()` and store it in a new column `Wins`
+  arrange(desc(Wins))
+# Sorts the data in descending order of wins (most wins at the top)
+
+ggplot(winners, aes(x = reorder(winner, Wins), y = Wins, fill = Wins)) +
+#Creating bar plot to visualize the number of World Cup wins by country
+# Using the Wins column for the y-axis (number of wins)
+# Also  Using  the `Wins` column to fill the bars with color (gradient based on number of wins)
+  geom_bar(stat = "identity") +
+# Create a bar plot where the height of the bars corresponds to the `Wins` values
+  scale_fill_viridis_c(option = "plasma") +
+  labs(title = "FIFA World Cup Winners by Country",
+    # Adding  a title to the plot and labels
+       x = "Country",
+       y = "Number of Wins") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+ # Rotating  x-axis labels by 45 degrees and align them properly
+        plot.title = element_text(size = 16, face = "bold"),
+        axis.title = element_text(size = 12)) 
+# Customize the axis title font size
+
+#Findings
+# The plot effectively highlights the  dominance of Brazil, Germany, and Italy in the FIFA World Cup, while also showing the achievements of other countries.  .It provides a clear visual representation of the distribution of World Cup wins and underscores the concentration of success among a small group of nations.
+#The distribution of wins is skewed, with a few countries (Brazil, Germany, Italy) dominating the tournament, while others have won only once or twice.
+
+```
+
+# --------------------------
+# Visualization 2: Average Goals per Match Over Time (Line Chart)
+# --------------------------
+```{r}
+# Calculate the average goals per match for each World Cup edition
+worldcups <- worldcups %>%
+  mutate(AvgGoals = goals_scored / games)
+#adds a new column to the `worldcups` data frame.
+#Avg goals is calculated by dividing the total goals scored (`goals_scored`) by the number of games played (`games`).
+
+#Creating  a line plot to visualize the average goals per match over time
+ggplot(worldcups, aes(x = year, y = AvgGoals)) +
+  geom_line(color = "royalblue", size = 1.2) +
+  #Adds a line to the plot
+  geom_point(color = "royalblue", size = 3) +
+  #Add points to the plot
+  labs(title = "Average Goals per Match in FIFA World Cups Over Time",
+# Adding  a title to the plot and labels
+       x = "Year",
+       y = "Average Goals per Match") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        axis.title = element_text(size = 12))
+
+#Findings
+#There is no clear upward or downward trend over time, indicating that the average goals per match have remained relatively stable.
+#In recent timesthe  tactical changes (e.g., more defensive strategies, better goalkeeping, and improved team organization) have influenced scoring patterns.
+#The stability in average goals per match in the modern era suggests that football has become more balanced, with teams focusing on both attacking and defensive strategies.
+```
+
+# --------------------------
+# Visualization 3: heatmap  between host countries and World Cup winners
+# --------------------------
+
+```{r}
+# Create a table of host and winner
+host_winner_table <- table(worldcups$host, worldcups$winner)
+# table function creates a contingency table that counts the occurrences of each combination of host  and winner
+# Convert to a data frame for ggplot
+host_winner_df <- as.data.frame(host_winner_table)
+colnames(host_winner_df) <- c("Host", "Winner", "Count")
+#The `as.data.frame()` function converts the table into a data frame, which is easier to work with in ggplot2.
+#The resulting data frame has three columns:host, winner, and Freq is  count.
+#Creating  a heatmap
+ggplot(host_winner_df, aes(x = Host, y = Winner, fill = Count)) +
+#x = Host: Use the Host column for the x-axis (host countries).
+#y = Winner: Use the Winner column for the y-axis (winning countries).
+#fill = Count: Use the Count column to determine the color intensity of the tiles.
+  geom_tile() +
+  labs(title = "Host Countries and World Cup Winners",
+# Adding  a title to the plot and labels
+       x = "Host Country",
+       y = "Winner") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Findings
+#The heatmap visualizes the relationship between host countries and World Cup winners
+#shows that host countries have won the World Cup multiple times
+#suggests that home advantage plays a significant role in a team's success, as hosts often perform better due to familiarity with conditions, fan support.
+#somecountries won the World Cup without hosting
+```
+# --------------------------
+# Visualization 4: goals scored and the number of teams played in FIFA World Cups over time
+# --------------------------
+
+```{r}
+#Creating  a combined plot to visualize goals scored and number of teams over time
+ggplot(worldcups, aes(x = year)) +
+# Add a bar plot for the number of teams
+  geom_bar(aes(y = teams * 5), stat = "identity", fill = "lightblue", alpha = 0.5) + 
+# Scale teams for visibility
+# Add the main line for goals scored
+#Uses the actual values of teams for the bar heights.
+#Sets the bar color to light blue.
+#Makes the bars semi-transparent for better visibility of overlapping elements.
+  geom_line(aes(y = goals_scored), color = "red", size = 1.2) +
+# Add points for each World Cup
+  geom_point(aes(y = goals_scored), color = "darkred", size = 3, alpha = 0.8) +
+# Highlight specific years (e.g., highest and lowest goals scored)
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank()
+  ) +
+# Adding titles and labels
+  labs(
+    title = "Goals Scored and No of Teams in FIFA World Cups",
+    subtitle = "Trends and Key Events Highlighted",
+    x = "Year",
+    y = "Goals Scored",
+    caption = "Source: FIFA World Cup Data"
+  ) +
+# Adjust the x-axis to show every 4 years (World Cup frequency)
+  scale_x_continuous(breaks = seq(1930, 2018, by = 8)) +
+# Add a secondary y-axis for the number of teams
+  scale_y_continuous(
+    name = "Goals Scored",
+    sec.axis = sec_axis(~ . / 5, name = "Number of Teams")  # Scale back to original team numbers
+  )
+
+#Findings
+#The red line shows the total goals scored in each World Cup edition.
+#There is a general upward trend in goals scored over time, with some fluctuation due to increase in number of teams 
+#The increase in teams correlates with the growth of the tournament and the inclusion of more countries.
+#The plot provides a comprehensive view of how goals scored and the number of teams have evolved in FIFA World Cups over time. It highlights key trends, such as the expansion of the tournament and the impact on goal totals, while also showing the fluctuations in playing styles. This analysis can help football analysts and fans understand the historical dynamics of the World Cup
+```
+# --------------------------
+# Visualization 5: FIFA World Cup attendance over time, with bars by the winning country.
+# --------------------------
+
+```{r}
+# Creating  a color palette for the winning countries
+winner_colors <- c(
+  "Uruguay" = "lightblue",
+  "Italy" = "green",
+  "West Germany" = "black",
+  "Brazil" = "yellow",
+  "England" = "red",
+  "Argentina" = "lightgreen",
+  "Germany" = "darkgray",
+  "France" = "blue",
+  "Spain" = "orange"
+)
+# Create the plot
+ggplot(worldcups, aes(x = year, y = attendance, fill = winner)) +
+# Add bars for attendance, colored by the winning country
+#year column for the x-axis (World Cup editions).
+#attendancecolumn for the y-axis (total attendance).
+#winner column to fill the bars with colors based on the winning country.
+  geom_bar(stat = "identity", alpha = 0.8) +
+#Uses the actual values of `attendance` for the bar heights
+  # Customize the theme
+  theme_minimal() +
+# Applies a minimal theme for a clean and modern look.
+
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+# Adding  titles and labels
+  labs(
+    title = "FIFA World Cup Attendance Over Time with Winners",
+    subtitle = "Color-Coded by Winning Country",
+    x = "Year",
+    y = "Attendance",
+    fill = "Winner",
+    caption = "Source: FIFA World Cup Data"
+  ) +
+# Adjust the x-axis to show every 4 years (World Cup frequency)
+  scale_x_continuous(breaks = seq(1930, 2018, by = 8)) +
+# Format the y-axis to show attendance in millions
+  scale_y_continuous(labels = scales::comma, sec.axis = sec_axis(~ . / 1e6, name = "Attendance (Millions)")) +
+# Use the custom color palette for the bars
+  scale_fill_manual(values = winner_colors)
+
+#Findings
+#The attendance has generally increased over time, reflecting the growing popularity of the World Cup.
+#It highlights key trends, such as the increase in attendance and the impact of hosting, while also showing the historical dominance of certain countries. fans understand the dynamics of World Cup attendance and its relationship with winning countries.
+#Future hosts can use this data to plan stadium capacities and marketing strategies to maximize attendance.
+```
+
+
+# --------------------------
+# Visualization 6:Matches Decided by Penalties or Extra Time by Country"
+# --------------------------
+
+```{r}
+# Count matches with extra time or penalties by team
+extra_time_penalties <- wc_matches %>%
+  filter(grepl("AET|penalties", win_conditions)) %>%
+#Filters the dataset to include only matches that went to extra time (AET) or penalties.
+# Combine home and away teams into one column
+  pivot_longer(cols = c(home_team, away_team), names_to = "team_type", values_to = "team") %>%
+#reshapes the data by combining the home_team and away_team columns into a single column called team.
+  group_by(team) %>%
+ #Stores the team names in the new column team.
+  summarise(
+    penalties = sum(grepl("penalties", win_conditions)),
+  #counts the number of matches 
+    extra_time = sum(grepl("AET", win_conditions))
+# grep is used again to count occurrences of "penalties" and "AET" in the `win_conditions` column.
+  ) %>%
+  # Reshape the data for stacked bar plot
+  pivot_longer(cols = c(penalties, extra_time), names_to = "type", values_to = "count")
+#Creates a new column type to indicate whether the count is for penalties or extra time.
+# Create the plot
+ggplot(extra_time_penalties, aes(x = reorder(team, -count), y = count, fill = type)) +
+
+  geom_bar(stat = "identity", position = "stack") +
+#Uses the actual values of count for the bar heights.
+#Stacks the bars for penalties and extra time on top of each other.
+# Add text labels for the total count
+  geom_text(
+    aes(label = ifelse(count > 0, count, "")),
+    position = position_stack(vjust = 0.5), color = "black", size = 3, fontface = "bold"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  # Add titles and labels
+  labs(
+    title = "Matches Decided by Penalties or Extra Time by Country",
+    subtitle = "Stacked Bar Plot Showing Penalties and Extra Time",
+    x = "Country",
+    y = "Number of Matches",
+    fill = "Type",
+    caption = "Source: FIFA World Cup Data"
+  ) +
+  # Use a custom color palette
+  scale_fill_manual(values = c("penalties" = "purple", "extra_time" = "orange"))
+
+#Findings
+#plot provides a clear visualization of the number of matches decided by penalties or extra time for each country. plot suggests that  teams in high-pressure situations and underscores the importance of preparation for penalty shootouts and extra time
+#Countries with a high number of matches decided by penalties or extra time are often those that consistently reach the knockout stages of the tournament.Teams can use this data to analyze their performance in high-pressure situations and improve their strategies for penalty shootouts and extra time
+```
+
+# --------------------------
+# Visualization 7:unique countries that have played Fifa World cup (1930-2014)
+# --------------------------
+```{r}
+
+# Extract unique countries that have played (home_team and away_team)
+participating_countries <- unique(c(wc_matches$home_team, wc_matches$away_team))
+# Get world map data
+world_map <- map_data("world")
+#retrieves geographic data for the world map, including coordinates for each country.
+
+# Standardize country names to match the world map data
+participating_countries <- case_when(
+  participating_countries == "USA" ~ "United States",
+  participating_countries == "England" ~ "UK",
+  participating_countries == "Czechoslovakia" ~ "Czech Republic",
+  participating_countries == "West Germany" ~ "Germany",
+  participating_countries == "Soviet Union" ~ "Russia",
+  participating_countries == "Yugoslavia" ~ "Serbia",
+  participating_countries == "Dutch West Indies" ~ "Netherlands",
+  participating_countries == "FR Yugoslavia" ~ "Serbia",
+  TRUE ~ participating_countries
+)
+#is used to standardize country names to match the naming conventions in the world map data.
+# Create a data frame for participating countries
+participating_data <- data.frame(region = participating_countries, played = TRUE)
+#A logical column set to TRUE for all countries that have participated in the World Cup.
+# Merge with world map data
+world_map <- world_map %>%
+  left_join(participating_data, by = "region")
+
+# Plot the map
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group, fill = played), color = "white", size = 0.1) +
+#draws the world map using the world_map data.
+#Maps the longitude long, latitude lat, and group to the plot, and fills the polygons based on the played column.
+#Sets the border color of the countries to white.
+#Sets the border thickness to 0.1.
+  scale_fill_manual(values = c("TRUE" = "Blue", "FALSE" = "lightgray"), na.value = "lightgray", name = "Played in World Cup") +
+  labs(title = "Countries That Have Played in the FIFA World Cup",
+       subtitle = "All participating countries since 1930") +
+  theme_void() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        legend.position = "bottom")
+#Places the legend at the bottom of the plot.
+
+
+#Findings
+#The blue-colored countries represent those that have participated in the World Cup at least once.
+#The light gray-colored countries represent those that have never participated.
+#The map shows that most countries in Europe, South America, North America, and Africa have participated in the World Cup.
+```
+

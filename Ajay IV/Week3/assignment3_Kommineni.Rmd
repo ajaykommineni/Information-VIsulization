@@ -1,0 +1,160 @@
+---
+title: |
+  | Assignment 3
+  | Visualisation in R
+author: |
+  | Your Name Goes Here
+output: word_document
+---
+
+##Note:
+Using the mpg data set (base in R) we will explore ggplot2 and what the added plotting features can do.
+Please remember to comment all your code and describe your findings in detail.
+This assignment is intended for you to work alone on, please do not use out side resources like code we do not cover in class or other students. Everything in this assignment is covered in week 3 and prior weeks. If you have any questions please reach out via email.
+
+##Please Load packages and data:
+```{r}
+
+library(ggplot2) # loads the ggplot2 package
+library(dplyr)
+# loads the dplyr package 
+data <- mpg 
+# loads the data set mpg  and assigns to data variable
+data
+# prints the data set
+```
+1) Explore the data set, what are the variables?
+```{r}
+# Load required library
+library(ggplot2)
+data <- mpg  
+# Print the column names (variables) in the dataset
+print(names(data))  # Displays the names of all columns (variables)
+# Display the structure of the dataset (data types, sample values)
+str(data)
+# Display the first few rows of the dataset
+head(data)
+# Summary statistics of the dataset
+summary(data)
+
+```
+
+2) Create a bar chart of 'cyl' count for the data set.
+```{r}
+ggplot(data, aes(x = factor(cyl))) + 
+  #  dataset as data and aes mapping to "cyl" as x axis
+  geom_bar() + # plots the bar graph
+  labs(x = "Number of Cylinders", y = "car count", title = "car count on no of cylinder it has") 
+# main title is added and the description for X and Y axis
+```
+
+3) Plot two variables (cty vs hwy) fuel economy as points, do we see a pattern?
+```{r}
+ggplot(data, aes(x = cty, y = hwy)) + 
+  # aes() mapping  "cty" for x-axis and "hwy" for y- axis 
+  geom_point() + # creates scatter plot 
+  labs(x = "City MPG", # x-axis label
+       y = "Highway MPG", # y-axis label
+       title = "City MPG  vs. Highway MPG") # title for chart
+
+# As city fuel economy increases, highway fuel economy also increases.
+#the cars that provides good mileage in the city also gives good mileage on the highway.
+#Some variation may exist due to vehicle types and driving conditions.
+```
+
+4) Build a Box and wisker plot of the car 'class' and cty fuel economy 
+```{r}
+ggplot(data, aes(x = class, y = cty)) +
+  # mapping  "class" on x and "cty" on y axes
+  geom_boxplot() + 
+  # boxplot is plotted
+  labs(x = "Car Class", # x-axis label
+       y = "City MPG", # y-axis label
+       title = "City MPG by Car Class") # title for graph
+ 
+#Compact and subcompact cars tend to have higher city MPG.
+# SUVs and pickups have lower city MPG, showing less fuel efficiency
+
+```
+
+5) Lets plot cty vs hwy again but now include the class "cyl" and color code it by number of cyl
+```{r}
+ggplot(data, aes(x = cty, y = hwy, color = factor(cyl))) + 
+  # plotting cty for x axis, hwy for y axis and color as cyl)
+  geom_point() + # adds points
+  labs(x = "City MPG", # x-axis label
+       y = "Highway MPG", # y-axis label
+       title = "City vs. Highway MPG by Number of Cylinders") # title of the chart
+# the color variation by the number of cylinders explains that cars with fewer normally have higher efficiency in both city and highway driving situations.
+```
+
+6) Let's build on chart 5, using 'facet_wrap()' lets compare 1999 to 2008.
+```{r}
+ggplot(data, aes(x = cty, y = hwy)) + 
+  geom_point(aes(color = factor(cyl))) +
+  # specifying color to factor cyl
+  facet_wrap(~year) + 
+  # facet_wrap() compares year
+  labs(x = "City MPG", # x-axis label
+       y = "Highway MPG", # y-axis label 
+       title = "City vs. Highway MPG (1999 vs 2008)")  # title for the graph
+
+
+# It compares the effectiveness of cars on city and highways. It is better in 2008 compared to 1999 maybe because of advancement of technology. 
+```
+
+7) Come up with a chat by ploting two or more variables and tell me what it shows us. This can be a point plot, box, histogram, or another plot we covered. 
+```{r}
+ggplot(data, aes(x = displ, y = hwy)) + 
+  geom_point(aes(color = factor(cyl))) + 
+  # specifying color to factor cyl
+  labs(x = "Engine Displacement (L)", # x-axis label
+       y = "Highway MPG", # y-axis label 
+       title = "Highway MPG vs Engine Displacement") +  # title for the graph
+
+  theme_bw()
+#we can  observe that larger engines tend to have lower highway MPG, while smaller engines generally perform better on the highway in terms of fuel efficiency. The points are clustered to show this inverse relationship.
+
+```
+
+##Part 2:
+Here we will use the data set 'gapminder' data set. This data set has basic country information.
+```{r}
+library(gapminder)
+head(gapminder)
+```
+
+1) Explore the data and look at the variables listed, what are they?
+```{r}
+# Print the column names (variables) in the dataset
+print(names(gapminder))  # Displays the names of all columns (variables)
+# Display the first few rows of the dataset
+head(gapminder)
+# Summary statistics of the dataset
+summary(gapminder)
+```
+
+2) Create a scatter plot of gdp v life expectancy for five (you pick) countries over a period of years. Plot these contries on the same chart. Show each country in a different color. Add a trend line (hint lm) for the set as a whole. Explain what you see.
+```{r}
+
+countries <- gapminder %>% # data set to filter and pipe
+  filter(country %in% c("Japan", "India", "United States", "Australia", "Germany"))
+    #Filter function filters countries from c vector provided 
+#Creating the scatter plot with filtered countries
+ggplot(countries, aes(x = gdpPercap, y = lifeExp, color = country)) + # aes() with x and y axes
+  geom_point(alpha = 0.5) + # to see overlap used alpha (0.5) for semi-transparent points
+  geom_smooth(method = "lm", se = FALSE, aes(group = 1, colour = "pink")) +  
+  # using linear model line with color yellow and group = 1 for trend
+  labs(x = "GDP per Capita", y = "Life Expectancy", title = "GDP vs Life Expectancy Across Five Countries") +
+  # labels for x and y axes with title
+  theme_bw()
+#for good looking
+#The trend line indicates a positive correlation between GDP and life expectancy, meaning that, in general, countries with higher GDP tend to have higher life expectancy. However, the slope of the trend line can vary, reflecting different economic growth patterns in these countries.
+# There is a positive relationship involving GDP per capita and life expectation which indicates the country with higher gdp has extended life probability. As well, there is a substantial sum of flexibility in the plot which says other factors can be affecting the correlation like weather, lifestyle, diet, etc.
+```
+
+3) (Not graded) What was one thing you found interesting this week? What would you like changed? 
+```{r}
+
+```
+

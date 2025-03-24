@@ -1,0 +1,149 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+```{r}
+library(tidyverse) 
+# loads the tidyverse library
+library(ggplot2) 
+# loads the ggplot2 package frim tidyverse library
+data() 
+# lists all the data sets built in R in new tab 
+?BOD 
+# data dictionary of BOD data set like description
+#this gives info about BOD in the bottam right section
+```
+```{r}
+# plotting the graph
+ggplot(data = BOD,
+       # choosing BOD as data
+       mapping = aes(x = Time, 
+                     y = demand))+ 
+  #setting x and y axes with time and demand respectively
+  geom_point(size = 5) + 
+  # adding points with size of 5
+  geom_line(color = "blue")
+# adds  color line to the points
+# As time passes demand increases with slight decrease
+
+```
+```{r}
+# plotting the graph
+# in the below command it didn't specify the data and mapping beacuse ggplot 
+# it automatically takes first two arugments as data and mapping
+
+ggplot(BOD, aes(Time, demand))+ 
+  # Assigning directly the data set, x and y axes.
+  geom_point(size = 3)+ 
+  # adding points with size of 3
+  geom_line(colour = "green") 
+# adds  color line to the points
+```
+
+
+```{r}
+
+head(CO2)
+# displays first few rows from the data set
+CO2 %>% 
+  #As we are using tidyverse package  we can use pipe operator
+  # creates ggplot with co2 data set with pipe operator 
+  # Create a scatter plot using ggplot
+  ggplot(aes(conc,uptake, # ggplot()  X-axis  as conc and  Y-axis as uptake 
+             colour = Treatment))+ 
+  # color to Treatment
+  # Add points to the scatter plot with specific aesthetics
+  geom_point(size = 3, alpha = 0.5)+ 
+  # with the size 3 and transparency 0.5 to the points in plot
+  geom_smooth(method = lm, se = F)+ 
+  # Add a trend line using linear regression (lm), excluding the confidence interval (se = FALSE)
+  facet_wrap(~Type) + 
+  # different panels are created for every plant depending on 'Type'
+  labs(title = "Concentration of CO2")+ # title to graph
+  theme_bw()
+# setting the black and white theme
+# It shows that as concentration of CO2 increases, CO2 uptake usually increases.
+# Additionally, nonchilled plants exhibit higher uptake rates compared to chilled plants.
+# This is evident from the partitioning of trend lines within each panel.
+```
+
+
+
+```{r}
+
+CO2 %>% # creates ggplot with co2 data set with pipe operator
+  ggplot(aes(Treatment, uptake)) + 
+  # ggplot() with aes() mapping takes the Treatment and uptake
+  geom_boxplot()+ 
+  # adds boxplot to the plot
+  geom_point(alpha = 0.5, aes(size = conc, 
+                              #adding points with transparency and conc to size 
+                 colour = Plant))+ # color as per the plants
+  facet_wrap(~Type)+ 
+  # different panels according to Type
+  #  Different plant types are visualized in separate panels.
+  coord_flip()+
+  # flips the plot
+  # Flipping the coordinates makes it easier to compare uptake levels across treatments.
+  theme_bw()+ 
+  # black and white theme
+  labs(title = "Chilled VS Non-Chilled") 
+# adds the label
+```
+
+
+
+```{r}
+
+head(mpg)
+# prints the first few rows
+
+# ggplot visualization using the mpg dataset
+mpg %>% 
+  # uses mpg data set with pipe operator
+  filter(cty<25) %>% 
+  # Filters dataset to include only cars with city mpg (cty) less than 25
+  ggplot(aes(displ, cty))+ 
+  # ggplot() with aes() mapping takes x and y axes
+  geom_point(aes(colour = drv, 
+                 # adds the points with color 'drv'
+                 size = trans),
+             alpha = 0.5)+ 
+  geom_smooth(method = lm)+
+  # linear model method for trend
+  facet_wrap(~year, nrow = 1)+ 
+  # Create separate panels for each 'year' of the cars, arranged in a single row
+  labs(x= "Engine Size", # x axis label
+       y = "MPG in the city", # y axis label
+       title = "Fuel Efficiency")+ # title for chart
+  theme_bw()  
+# black and white theme to chart
+```
+
+
+
+
+
+
+
+
+
+

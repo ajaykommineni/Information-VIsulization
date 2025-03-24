@@ -1,0 +1,236 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+
+#Manipulate your data. Data wrangling. R programmning  with Greg Martin
+```{r}
+library(tidyverse) 
+# loads the package
+library(dplyr) 
+
+?msleep # to know more about the msleep data set 
+glimpse(msleep)
+# Variable is renamed
+msleep %>% 
+  rename("conserv" = "conservation") 
+# rename() function is to rename names of variables of rows or columns
+head(msleep) 
+# prints first few rows of the renamed table
+
+```
+
+
+
+```{r}
+# Reorder variables
+msleep %>% 
+ select(vore,name,everything()) 
+#  Selects the columns 'vore', 'name'
+#everything is used to select  all other columns
+
+#chnaging varaible type
+class(msleep$vore) 
+# shows the class of vore varaible in dataser msleep
+msleep$vore <- as.factor(msleep$vore) 
+# converting it into a factor
+
+# there is another way to change the varaible name 
+msleep %>%
+  mutate(vore = as.character(vore)) %>% 
+  # again chnaging  variable to character
+ head() # prints first few rows of updated data set
+
+```
+
+
+```{r}
+#selecting variables to work with
+names(msleep) 
+# prints the names of all columns of msleep dataset
+  msleep %>% 
+    select(2:4, 
+           # selects 2,3,4 varaibles 
+           awake, # adds awake
+           starts_with("sleep"), 
+           # selects all columns start with sleep
+           contains ("wt")) %>% 
+    # selects the colums with wt in their varaible name 
+    names() 
+  # prints the names of the selected
+
+```
+
+
+```{r}
+#filter and arrange data
+unique(msleep$order)
+#Returns the unique values from the order column
+```
+```{r}
+msleep %>% 
+  filter((order== "Carnivora" | 
+            order== "Primates")&
+           # Filter rows where the order is either "Carnivora" or "Primates"
+           sleep_total > 8) %>% 
+  # and total sleep duration is greater than 8 hours
+  select(name,order,sleep_total) %>% 
+  # Select only the columns: name, order, and total sleep 
+  arrange(-sleep_total)
+  #this will Arrange the data in descending order of total sleep duration
+
+```
+
+
+```{r}
+#this ia another way fo above shown method
+data(msleep)
+print(head(msleep)) 
+
+msleep %>% 
+  # includes the data set and piping to next function
+  filter(order %in% c("Carnivora", "Primates") 
+         & sleep_total > 8) %>% 
+  select(name,order,sleep_total) %>% 
+  # Filters rows for 'Carnivora' or 'Primates' 
+  #and 'sleep_total' more than 8
+   select(name,order,sleep_total) %>% 
+  arrange(order) # arranges data by the order
+```
+```{r}
+library(tidyverse) 
+# loads the package
+library(dplyr) 
+#change obseravations
+msleep %>% 
+  mutate(brainwt= brainwt*1000) 
+  #mutate function chnages the brainwt into 1000 times more
+  #View()
+```
+
+```{r}
+# new variable size_of_brain and categorizes brain weight
+size_of_brain <- msleep %>% 
+  select(name, brainwt) %>%
+  # Select the columns 'name' and 'brainwt'
+  drop_na(brainwt) %>% 
+  # drops NA values i.e missing values
+  mutate(brain_size = if_else(brainwt > 0.01, "large", "small"))
+# create a new varaible name as brain_size
+# if brainwt is more than 0.01then set its values to large  else small 
+print(head(size_of_brain)) 
+# prints the first few rows of the size_of_brain
+```
+
+
+```{r}
+# chnaging observations from large,small into 1,2 
+size_of_brain %>% #  
+  mutate(brain_size = recode(brain_size, "large" = 1, "small" = 2))
+# modifying brain_size 
+#recodde will first argument as which to work with 
+print(head(size_of_brain)) # prints the head of the data frame
+```
+
+
+```{r}
+# Reshapes the data from long to wide or wide to long
+library(gapminder) 
+  data<- select(gapminder, country, year, lifeExp) 
+  # from gap minder dataset the above code select those speicifc varaibles 
+  wide_data <- data %>% 
+    # createa a new data set  and pipe the data
+  pivot_wider(names_from = year, values_from = lifeExp) 
+  # pivot wider changes the column names as years and life expectancy as values
+  #View(wide_data)
+```
+
+
+```{r}
+long_data <- wide_data %>% 
+  # includes wide_data with pipe new dataset long_data
+pivot_longer(2:13, 
+      # slects 2 to 13 columns back from the wide data
+             names_to = "year", 
+    # pivoted columns should go into a new 'year' column
+             values_to = "lifeExp") 
+# new values to lifeExp
+#View(long_data)
+```
+
+##  Bar charts and Histograms using ggplot in R with Greg Martin
+```{r}
+library(tidyverse) 
+?msleep 
+# displays the info about the dataframe
+head(msleep) # gets the top few rows
+```
+
+
+```{r}
+
+msleep %>% 
+  drop_na(vore) %>% 
+  # drops missing values in vore
+  ggplot(aes(x=vore))+ 
+  # useing ggplot and mapping  vore to x axis
+  geom_bar(fill="#97B3C6")+ 
+  # creates a bar plot and assigns the filler
+  theme_bw()+ 
+  # sets black and white theme
+  labs(x = "Vore", 
+       # labeling the x axis
+       y = NULL,
+       # labeling the y-axis as null
+       title = "Number of observations per order") 
+# adds the title
+# This plot gives the count in a bar graph according to carni, herbi, insects and omnivores
+#If the bars are uneven, it suggests that some categories have more species recorded than others.
+# The plot displays the count of various dietary categories ('vore') in the data set. Herbivores ('herbi') have the highest count (over 30), followed by 'carni' and 'omni', with each around 20. 
+#Insectivores have the lowest count, below 5.
+#With a much taller bar, it means that most of the recorded species in the dataset belong to herbi.
+
+```
+
+
+```{r}
+# created a barplot 
+msleep %>% 
+  ggplot(aes(awake)) + 
+  # Using ggplot with aesthetics mapping to awake
+  geom_histogram(binwidth = 1, fill = "#97B3C6")+ 
+  # creates histogram with bindwidth = 1 and fills the repective color 
+  theme_bw()+ 
+  # sets black and white theme
+  labs(x = "Total Sleep", 
+       y = NULL, 
+       title = "Histogram of total sleep") 
+
+#The histogram helps identify how sleep duration varies among different species.
+# The plot shows the allocation of total sleep time in the `msleep` dataset. 
+#The data shows multiple peaks, indicating variations in sleep duration across numerous species.
+#If most bars are clustered to the left (low awake hours), it suggests that many species sleep a lot.
+#Peaks indicate common sleep time  among species.
+
+```
+
+
+
+
+
+
+
+

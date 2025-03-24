@@ -1,0 +1,194 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+#Load raw data from CSV files into data frames
+train <- read.csv("train.csv", header = TRUE) 
+# Loads the training data set
+test <- read.csv("test.csv", header = TRUE) 
+# Loads the testing data set
+#Reads the training and test datasets from CSV files into train and test data frames.
+#header = TRUE ensures the first row is treated as column names.
+
+```
+
+
+```{r}
+test.survived <- data.frame(Survived = rep("None", nrow(test)), test[,]) 
+#makes a new test for data frames.survived by include a column labeled "Survived" in the test set.
+#This makes it possible to combine test and train datasets while keeping columns consistent.
+#Rep("None", nrow(test)) inserts "None" for each row in the new column.
+# `test[,]` ensures all columns from the test set are included.
+```
+
+
+
+```{r}
+data.combined <- rbind(train, test.survived) 
+# 'train' and 'test.survived' are combined using rbind()
+#Combines the train and test.survived datasets into a single dataset (data.combined).
+#This allows easier analysis across both sets.
+str(data.combined) 
+# displays the structure of the data frame using str()
+#including column names, types, and sample data.
+
+# Factors are used for categorical variables in R.
+data.combined$survived <- as.factor(data.combined$Survived) 
+# converts the 'survived' to factor
+data.combined$survived <- as.factor(data.combined$Pclass) 
+# converts the 'Pclass' to factor
+
+
+table(data.combined$survived) 
+# creates frequencies table for survived
+# `table()` counts occurrences of each unique value in the column.
+#Counts how many passengers survived (1), didn't survive (0), and "None" (from the test set).
+table(data.combined$Pclass) 
+#Creates frequencies table for Pclass
+# This shows the distribution of passengers across classes.
+#Displays how many passengers belonged to each class (1st, 2nd, or 3rd).
+
+```
+
+```{r}
+library(ggplot2) 
+# loads ggplot2 package for data visualization
+
+train$pclass <- as.factor(train$Pclass) 
+#converts pclass to a factor in train 
+#creates a bar chart showing survival counts across passenger classes
+ggplot(train, aes(x = Pclass, fill = factor(Survived))) + 
+  # ggplot using train data set with aes mapping x to Pclass and fill
+  geom_histogram(stat = "Count", width = 0.5) + # Creates histogram width 0.5
+  xlab(" Pclass")+ 
+  # adds label to x-axis
+  ylab("Total Count") + # adds labels to y-axis
+  labs(fill = "Survived") 
+# fill legend is named as 'Survived'
+#Findings
+#ealthier passengers (higher class) had higher survival rates.
+#According to the plot, first-class passengers who were wealthy had higher survival percentages than those in other classes. This is consistent with historical narratives of the Titanic disaster, which indicate that survival results were significantly influenced by social level. These conclusions can be supported by more research using statistical tests and proportions.
+```
+
+
+```{r}
+head(as.character(train$Name))
+# displays the top few elements of the column 'Name'
+
+length(unique(as.character(data.combined$Name))) 
+# Count the number of unique names across both datasets.
+# `unique()` removes duplicates, and `length()` counts the remaining values.
+
+dup.names <- as.character(data.combined[which(duplicated(as.character(data.combined$Name))), "name"]) 
+# identify duplicate names from 'data.combined' 
+# stores them in dup.names
+# `duplicated()` returns a logical vector indicating duplicate rows.
+
+data.combined[which(data.combined$name %in% dup.names),]
+# Filters data to have only the rows where the 'name' matches any in 'dup.names'
+```
+
+
+```{r}
+library(stringr) 
+# loads the stringr package for string usage
+#Loads stringr for text processing
+# `str_detect()` checks for a pattern in a string.
+misses <- data.combined[which(str_detect(data.combined$Name, "Miss.")), ] 
+# extracts rows where 'Name' has "Miss."
+misses[1:5, ] # displays the first 5 rows
+```
+
+
+```{r}
+mrses <- data.combined[which(str_detect(data.combined$Name, "Mrs.")), ] 
+# extracts rows where 'Name' has "Mrs."
+mrses[1:5, ] # displays the first 5 rows
+```
+
+
+```{r}
+males <- data.combined[which(str_detect(data.combined$Name, "male")), ]
+# extracts rows where 'Name' has "male"
+males[1:5, ] # displays the first 5 rows
+```
+
+
+```{r}
+#extractTitle() to extract a person's title from their name
+extractTitle <- function(name) { 
+  # defines a function to classify and extract title
+  name <- as.character(name)
+  # converts the name variable to character
+  #Uses grep() to check for titles: "Miss.", "Master.", "Mrs.", "Mr."
+  
+  if(length(grep("Miss", name)) > 0) { 
+    # if condition to check and return specific titles based on match case
+    return("Miss.") 
+    # returns Miss. if it is in title
+  } else if (length(grep("Master.", name)) > 0) { 
+    # else if condition
+    return("Master.") 
+    # returns Master. if it is in title
+  } else if (length(grep("Mrs.", name)) > 0) { 
+    # else if condition
+    return("Mrs.") 
+    # returns Mrs. if it is in title
+  } else if (length(grep("Mr.", name)) > 0) { 
+    # else if condition
+    return("Mr.") 
+    # returns Mr if it is in title
+  } else {
+    #else condition if all the above conditions are matched then it comes here
+    return("Other") 
+    # returns Other if none matched
+  }
+}
+```
+
+
+```{r}
+titles <- NULL # title is set to null
+# Apply the `extractTitle()` function to each row in the dataset.
+for(i in 1:nrow(data.combined)) { # loops through every row in dataframe
+  titles <- c(titles, extractTitle(data.combined[i,"name"])) #combine the titles
+}
+```
+
+
+```{r}
+data.combined$titles <- as.factor(titles) # Adds new column titles vector in data.combined and converts to factor
+
+#Filters data to only include training passengers 
+ggplot(data.combined[1:891, ], aes(x= titles, fill = Survived)) + 
+  # ggplot with data and aes mapping x-axis and fill
+  geom_bar(width = 0.5) + # adds bars to the graph
+  facet_wrap(~Pclass)+ # # separate plots are created with Pclass
+  ggtitle("Pclass") + # gives title
+  xlab("Title") + # label x-axis as Title
+  ylab("Total Count") + # labels y-axis as Total Count
+  labs(fill = "Survived") # labels fill legend as Survived
+
+#Findings
+#According to the "women and children first" principle, the highest survival rates were seen among women and children, particularly in higher social levels.
+#Among all classifications, adult males ("Mr.") had the lowest survival rates.
+#The impact of  position was highlighted by the fact that passengers in the first and second classes who were wealthier had better survival outcomes.
+```

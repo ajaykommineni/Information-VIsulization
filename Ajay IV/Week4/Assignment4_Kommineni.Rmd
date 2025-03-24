@@ -1,0 +1,151 @@
+---
+
+title: "Visualisation in R, Week 4"
+author: "Your name here"
+output: word_document
+
+---
+
+For this weeks assignment 4 we will be exploring the SIPRI Military Expenditure database which contains information on Country military spending from 1988-2021. We will be using ggplot to create visualizations to look at relationships between different variables for multiple countries. 
+This database file can be accessed via Andy Kriebel’s Makeover Monday Project at http://www.makeovermonday.co.uk/
+We will be using the week of 29/08/2022 - Top 10 Military Budgets
+**File downlaod availbile in BlackBoard**
+
+Please load data from a file path and explain/explore.
+```{r}
+library(tidyverse)
+# tidyverse package is loaded
+library(readxl) 
+# Readxl is used to read Excel files (.xlsx format).
+
+file_path <-"/Users/ajaykommineni/Downloads/SIPRI Military Expenditure Database.xlsx" 
+# file path is set to variable
+data <- read_excel(file_path) 
+# reading file stored in variable
+head(data) 
+# prints the top few rows of the data set
+str(data) 
+# prints the structure
+names(data) 
+# displays the column names
+```
+
+Plot Spending 2010 USD vs Percent of GDP for countries. Since the plot has extremes, use the log as a scale. Explain findings and tell a story.
+```{r}
+library(ggplot2) # includes ggplot2 package for visualization
+
+data_filtered <- data %>%  # data with pipe operator
+  filter(!is.na(`Spending (2020 USD)`) & !is.na(`Percent of GDP`)) # filter the missing values in both columns
+
+ggplot(data_filtered, aes(x = `Spending (2020 USD)`, y = `Percent of GDP`, color = Country)) + # scatter plot is created and maps x to 'Spending (2020 USD)' and y to 'Percent of GDP', and color by 'Country'
+  geom_point(alpha = 0.5) + # points are added with transparency(0.5)
+  scale_x_log10(label = scales::dollar_format()) +  # logarithmic transformation applied for x axis
+  scale_y_log10() + # y axis log scale
+  labs(title = "Military Spending vs. Percent of GDP by Country", # title for plot
+       x = "Military Spending (2020 USD, log scale)", # x-axis label
+       y = "Percent of GDP (log scale)", # y-axis label
+       caption = "Data: SIPRI Military Expenditure Database") + # caption for the plot
+  theme_minimal()+
+  theme(legend.position = "none")
+
+
+# Findings- military spending and GDP has a positive correlation. meaning countries with higher GDPs generally allocate more funds to defense.
+#The plot reveals outliers that fall into two major categories: High Military Spending, High GDP 
+#Countries like the United States and China, where absolute spending is massive but remains a smaller percentage of GDP. High Military Spending, Low GDP – Nations like Saudi Arabia and Oman, where military expenditure constitutes a large share of GDP despite a moderate total economy.
+
+
+```
+
+Look into the growth or decline of spending in at least 3 countries over years (From 2010 to 2020). Plot these in the same graphic but on different plots. Explain findings and tell a story.
+```{r}
+# Filter the data for selected nations and guaranteeing there are no NA values
+library(ggplot2) # ggplot2 package is included
+library(dplyr) # includes dplyr package
+
+data_filtered <- data %>%
+  filter(Country %in% c("United Kingdom","Japan", "Russia", "India") & Year >= 2010 & Year <= 2020) %>% 
+  # data is filtered to include only the specified countries in specified years 
+  drop_na(`Spending (2020 USD)`)  
+# drops rows where NA in Spending (2020 USD) to get proper data
+
+ggplot(data_filtered, aes(x = Year, y = `Spending (2020 USD)`, color = Country)) +
+  facet_wrap(~Country , scales = "free_y") +
+  # Separate plots for each country with independent y-scales
+  geom_point(alpha = 0.5)+
+  geom_line()+# lines are added to the plot
+  labs(
+    title = "Military Spending Trends (2010-2020)",# Adds title to plot
+    x = "Year",
+    #x-axis label 
+    y = "Military Spending (2020 USD)",# y-axis label 
+  ) +
+  theme_minimal()  
+# minimalist theme is set to lessen the visual distractions
+
+
+#Findings-
+#United Kingdom: Stable military spending with slight fluctuations
+#Japan: Gradual increase in spending, especially post-2015
+#Russia: Sharp increase in spending after 2014
+#India: Steady rise in spending, reflecting growing security concerns
+#The trends indicate that military spending is increasingly tied to geopolitical security concerns in a world with rising tensions, particularly in Europe and Asia.
+#The increase in military budgets globally—particularly in Asia—speaks to the shifting power dynamics and concerns over security
+```
+
+Add a simple trend line to the last graph. Explain findings and tell a story.
+```{r}
+ data_filtered <- data %>%
+  filter(Country %in% c("United Kingdom","Japan", "Russia", "India") & Year >= 2010 & Year <= 2020) %>% 
+  # data is filtered to include only the specified countries in specified years 
+  drop_na(`Spending (2020 USD)`)  
+# drops rows where NA in Spending (2020 USD) to get proper data
+
+ggplot(data_filtered, aes(x = Year, y = `Spending (2020 USD)`, color = Country)) +
+  facet_wrap(~Country , scales = "free_y") +
+  # Separate plots for each country with independent y-scales
+  geom_point(alpha = 0.5)+
+  geom_line()+# lines are added to the plot
+  geom_smooth(method = "lm", se = FALSE, color = "green") + # Adds smooth trend line use of linear model and color black
+  labs(
+    title = "Military Spending Trends (2010-2020)",# Adds title to plot
+    x = "Year",
+    #x-axis label 
+    y = "Military Spending (2020 USD)",# y-axis label 
+  ) +
+  theme_minimal()  
+# minimalist theme is set to lessen the visual distractions
+
+
+#Findings
+#In Countries like India and  Japan we see steep growth of line   
+#
+#Explanation- The trend lines support the notion that military spending is influenced by geopolitical changes. The UK's budget is constant, while Japan's and India's are growing steadily, and Russia's budget has increased significantly since 2014 as a result of wars and geopolitical aspirations. These patterns draw attention to strategic military expansion and regional security issues in a changing global environment.
+```
+
+Russian and Chinese Military aggression is viewed as the biggest threat to the United States and NATO allies. Therefore, we needs to effectively analyze the military spending per capita of Russia and China from 2000 to present, and compare it to the military spending per capita of NATO countries Canada, France, Germany, United Kingdom, and the United States in the same time period. This will allow us to analyze NATO's response to the increase or decrease of Russian and Chinese military spending per capital.
+```{r}
+library(dplyr)
+library(ggplot2)
+
+filtered_data <- data %>% # data is filtered and assigned to variable
+  filter(Country %in% c("Russia", "China", "Canada", "France", "Germany", "United Kingdom", "United States") & # filtering for comparison
+         Year >= 2000) # year greater than equal to 2000
+
+spending_plot <- ggplot(filtered_data, aes(x = Year, y = `Spending per Capita`, color = Country)) + # using filtered data with aes maps year to x and spending per capita to y axes respectively
+  geom_line() + # adds a line
+  labs(title = "Comparison of Military Spending Per Capita (2000-Present)", # title for plot
+       subtitle = "Military spending per capita of Russia, China, and key NATO countries", # subtitle for graph
+       x = "Year", # x axis label
+       y = "Military Spending Per Capita (USD)") + # y axis label
+  theme_minimal() + # minimal theme is set
+  theme(plot.title = element_text(hjust = 0.5),  # Center the title for plot
+        legend.title = element_text(face = "bold"))  # bolds the legend title
+print(spending_plot) # prints the plot
+
+# Findings
+#Russia's military spending per capita increased sharply after 2014, China’s spending per capita has grown steadily, reflecting its long-term military expansion. However, it remains lower than NATO countries
+#NATO Countries (Canada, France, Germany, UK, US):United States has the highest spending per capita, with continuous growth over time. United Kingdom, France, and Germany show moderate increases, Canada’s spending per capita remains lower but has gradually risen.
+#Explaination
+#The spending patterns of NATO point to a reactive strategy, with military budgets rising in reaction to China and Russian concerns. All things considered, the graph depicts the strategic military rivalry between NATO and Russia/China, with spending trends indicating changes in geopolitics and security issues.
+```
+
