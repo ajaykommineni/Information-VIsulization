@@ -1,0 +1,143 @@
+---
+title: "week 6 assignment"
+author: "Ajay"
+date: "2025-05-01"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+#Exercises
+#1. Load the tissue_gene_expression dataset. Remove the row means and compute the distance between each observation. Store the result in d.
+```{r}
+# Install and load dslabs if needed
+# Only run this once
+library(dslabs)
+```
+
+
+```{r}
+# Load the tissue_gene_expression dataset
+data("tissue_gene_expression")
+
+# View the structure
+str(tissue_gene_expression)
+
+# Step 1: Access the data matrix
+x <- tissue_gene_expression$x
+
+# Step 2: Center each row by subtracting its mean
+# This removes overall expression level differences per sample
+x_centered <- sweep(x, 1, rowMeans(x))
+
+# Step 3: Compute the Euclidean distances between samples (rows)
+d <- dist(x_centered)
+
+# Optional: check structure or preview
+print(d)
+
+```
+
+#2. Make a hierarchical clustering plot and add the tissue types as labels.
+
+
+```{r}
+# Load required packages
+library(dslabs)     # for tissue_gene_expression
+library(dplyr)      # for data manipulation
+library(ggplot2)    # for plotting 
+
+# Step 1: Perform hierarchical clustering using the distance matrix
+hc <- hclust(d)
+
+# Step 2: Convert tissue types to character vector (for labeling)
+labels <- as.character(tissue_gene_expression$y)
+
+# Step 3: Plot dendrogram with tissue type labels
+# Basic base R plot
+plot(hc, labels = labels, main = "Hierarchical Clustering of Tissues",
+     xlab = "", sub = "", cex = 0.6)  # cex adjusts label size
+
+```
+#3. Run a k-means clustering on the data with  K=7 .Make a table comparing the identified clusters to the actual tissue types. Run the algorithm several times to see how the answer changes.
+```{r}
+# Load libraries
+library(dslabs)
+library(dplyr)
+
+# Get the centered data again
+x <- tissue_gene_expression$x
+x_centered <- sweep(x, 1, rowMeans(x))
+
+# Set number of clusters
+k <- 7
+
+# Run k-means clustering (set nstart for more stable results)
+set.seed(123)  # Set seed for reproducibility
+kmeans_result <- kmeans(x_centered, centers = k, nstart = 25)
+
+# Compare clusters to actual tissue types
+table(Cluster = kmeans_result$cluster, Tissue = tissue_gene_expression$y)
+
+```
+#
+
+```{r}
+# Load required libraries
+library(dslabs)
+library(RColorBrewer)
+
+# Load the dataset
+x <- tissue_gene_expression$x
+y <- tissue_gene_expression$y
+
+# Step 1: Select the 50 most variable genes
+gene_variances <- apply(x, 2, var)
+top_genes <- order(gene_variances, decreasing = TRUE)[1:50]
+heatmap_data <- x[, top_genes]
+
+# Step 2: Center each gene (column-wise)
+heatmap_ready <- sweep(heatmap_data, 2, colMeans(heatmap_data))
+
+# Step 3: Assign tissue colors for each row (sample)
+# Use Set1 palette for clarity
+tissue_colors <- as.factor(y)
+color_palette <- brewer.pal(length(levels(tissue_colors)), "Set1")
+tissue_color_keys <- color_palette[tissue_colors]
+
+# Step 4: Plot the heatmap
+heatmap(heatmap_ready,
+        RowSideColors = tissue_color_keys,  # Add color to show tissue type
+        col = brewer.pal(11, "RdBu"),       # Color scale: low (blue) to high (red)
+        main = "Top 50 Genes: Expression Clustering by Tissue",
+        margins = c(6, 6))                  # Extra space for labels
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

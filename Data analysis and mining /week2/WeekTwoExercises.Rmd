@@ -1,0 +1,293 @@
+---
+title: "DataMiningWeekTwo"
+author: "Ajay Kommineni"
+date: "Mon 31st,2025"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Install and load packages
+
+```{R, include=FALSE}
+pkgs <- c("arules", "GGally", 
+          "ggcorrplot", "hexbin", "palmerpenguins", "plotly", "seriation", "tidyverse")
+
+pkgs_install <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
+if(length(pkgs_install)) install.packages(pkgs_install)
+library(arules)
+library(GGally)
+library(ggcorrplot)
+library(hexbin)
+library(palmerpenguins)
+library(plotly)
+library(seriation)
+library(tidyverse)
+```
+# load the iris dataset
+
+```{R}
+library(tidyverse)
+data(iris)
+iris <- as_tibble(iris)
+iris
+```
+
+
+```{r}
+library(palmerpenguins)
+data(package = 'palmerpenguins')
+```
+
+
+```{r}
+head(penguins)
+```
+#Exercises
+#1. Group the penguins by species, island or sex. What can you find out?
+
+```{r}
+# Load necessary libraries
+library(palmerpenguins)  # Provides the penguin dataset
+library(tidyverse)       # Includes dplyr and ggplot2 for data manipulation and visualization
+```
+# Grouping by species and summarizing key statistics
+```{r}
+penguins %>%                  
+  group_by(species) %>%        
+  # Grouping  the data by the 'species' column in the given data 
+  summarise(                   
+    count = n(),               
+    #it  count the number of observations for each species recorded 
+    avg_bill_length = mean(bill_length_mm, na.rm = TRUE),  
+    # Calculates the  average bill length and ignoring Null values
+    avg_bill_depth = mean(bill_depth_mm, na.rm = TRUE),  
+    # Calculates the  average bill depth and ignoring Null values
+    avg_flipper_length = mean(flipper_length_mm, na.rm = TRUE), 
+    # Calculates the  average flipper length and ignoring Null values
+    avg_body_mass = mean(body_mass_g, na.rm = TRUE)       
+    # # Calculates the  average body of mass penguins  and ignoring Null values
+  )
+
+#findings
+#1.The dataset contains three species: Adelie, Chinstrap, and Gentoo.
+#2.Each species has a different number of recorded observations, indicating variations in their population representation in the dataset.
+#3 Across all groups, body mass is positively correlated with flipper length—meaning larger penguins tend to have longer flippers and bills.
+#The dataset highlights clear differences in bill size, flipper length, and body mass among penguin species. These differences may be related to habitat preferences, feeding behavior, and evolutionary adaptations
+
+```
+
+# Grouping by island and summarizing key statistics
+
+```{r}
+penguins %>%                  
+  group_by(island) %>%        
+  summarise(                  
+    count = n(),               
+    # Count the number of observations for each island
+    avg_bill_length = mean(bill_length_mm, na.rm = TRUE),  
+    avg_body_mass = mean(body_mass_g, na.rm = TRUE)      
+  )
+#Findings
+#Some islands have a higher number of recorded penguins, suggesting species concentration differences across islands.
+#Biscoe Island tends to have the highest number of penguins, indicating a favorable habitat for multiple species.
+#This suggests that environmental conditions (food availability, temperature, etc.) could impact penguin growth and survival.
+```
+
+# Grouping by sex and summarizing key statistics
+
+```{r}
+penguins %>%                   
+  group_by(sex) %>%          
+  summarise(                 
+    count = n(),              
+    avg_body_mass = mean(body_mass_g, na.rm = TRUE)      
+  )
+#Findings
+#the dataset shows that male penguins tend to have a higher body mass than females, a pattern common in many bird species. However, missing sex data could impact the accuracy of these findings, so further data cleaning or imputation may be necessary for precise analysis.
+
+```
+
+#Exercise 2
+#Create histograms and boxplots for each continuous variable. Interpret the distributions.
+
+#1. Bill Length (mm)
+```{r}
+library(ggplot2)
+library(patchwork)
+# Histogram: Shows frequency distribution of bill lengths
+p1 <- ggplot(penguins, aes(x = bill_length_mm)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  #binwidth = 1: Controls histogram bar width 
+  #fill = species: Colors boxplots by species for easy comparison.
+  labs(title = "Distribution of Bill Length", x = "Bill Length (mm)")
+
+# Boxplot: Compares bill lengths across species
+p2 <- ggplot(penguins, aes(x = species, y = bill_length_mm, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Bill Length by Species", y = "Bill Length (mm)")
+
+p1 + p2
+
+#interpretation
+#Histogram:Bimodal distribution with peaks at ~35 mm and ~48 mm.Indicates two dominant groups:Smaller-billed penguins (Adelie) and Larger-billed penguins (Chinstrap/Gentoo).
+#Boxplot:Adelie: Tightly clustered (median ~38 mm), minimal variability and Chinstrap/Gentoo: Overlap but Gentoo bills are slightly shorter on average.
+```
+
+#2Histogram & Boxplot for Bill Depth
+```{r}
+# Histogram
+p3 <- ggplot(penguins, aes(x = bill_depth_mm)) +
+  geom_histogram(binwidth = 0.5, fill = "lightgreen", color = "black") +
+  labs(title = "Distribution of Bill Depth", x = "Bill Depth (mm)")
+
+# Boxplot by species
+p4 <- ggplot(penguins, aes(x = species, y = bill_depth_mm, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Bill Depth by Species", y = "Bill Depth (mm)")
+
+p3 + p4
+#interpretation
+#Histogram:Right-skewed with a peak at ~18 mm.Most penguins have medium-depth bills; few have very shallow/deep bills.
+#Boxplot:Gentoo: Distinctly shallower bills (median ~15 mm), low variability.Adelie/Chinstrap: Similar depths but Adelies are slightly deeper.
+```
+
+#3. Flipper Length (mm)
+#Histogram & Boxplot
+
+```{r}
+# Histogram
+p5 <- ggplot(penguins, aes(x = flipper_length_mm)) +
+  geom_histogram(binwidth = 5, fill = "grey", color = "black") +
+  labs(title = "Distribution of Flipper Length", x = "Flipper Length (mm)")
+
+# Boxplot by species
+p6 <- ggplot(penguins, aes(x = species, y = flipper_length_mm, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Flipper Length by Species", y = "Flipper Length (mm)")
+
+p5 + p6
+#interpertation
+#Histogram:Trimodal distribution with peaks at ~190 mm, ~195 mm, and ~215 mm.Matches the three species: Adelie, Chinstrap, and Gentoo.
+#Boxplot:Gentoo: Longest flippers (median ~217 mm), narrow range — efficient for deep diving.Adelie: Shortest flippers (median ~190 mm), high variability.
+```
+
+#4. Body Mass (g)
+#Histogram & Boxplot
+
+```{r}
+# Histogram
+p7 <- ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 100, fill = "blue", color = "black") +
+  labs(title = "Distribution of Body Mass", x = "Body Mass (g)")
+
+# Boxplot by species
+p8 <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Body Mass by Species", y = "Body Mass (g)")
+p7 + p8
+#interpertation
+#Histogram:Bimodal distribution with peaks at ~3500 g (Adelie/Chinstrap) and ~5000 g (Gentoo).
+#Boxplot:Gentoo: Heaviest (median ~5000 g), tightly clustered — consistent body size.Adelie/Chinstrap: Overlap, but Adelies show more variability.
+```
+#Exercise 3
+#Create scatterplots and a scatterplot matrix. Can you identify correlations?
+```{r}
+# Load required packages
+library(ggplot2)      # For creating plots
+library(GGally)       # For scatterplot matrix (ggpairs)
+library(palmerpenguins) # Contains the dataset
+
+# Remove rows with missing values for clean analysis
+penguins_clean <- na.omit(penguins)
+```
+#1 Bill Length vs. Bill Depth
+```{r}
+ggplot(penguins_clean, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point(size = 2, alpha = 0.7) +  # Adjust point transparency and size
+  labs(
+    title = "Bill Length vs. Bill Depth by Species",
+    x = "Bill Length (mm)",
+    y = "Bill Depth (mm)"
+  ) +
+  theme_minimal()
+#Findings
+#Gentoo	-0.53	Longer bills = shallower
+#Adelie	+0.39	Longer bills = deeper
+#Chinstrap	+0.30	Slight positive trend
+```
+
+#2. Flipper Length vs. Body Mass
+
+```{r}
+ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(size = 2) +
+  labs(
+    title = "Flipper Length vs. Body Mass",
+    x = "Flipper Length (mm)",
+    y = "Body Mass (g)"
+  )
+#findings
+#Strong Positive Correlation between Flipper Length vs. Body Mass
+#Correlation (r): ~0.87 (all species)
+#Longer flippers = heavier penguins. Flipper length scales with body size for efficient swimming.
+```
+
+#3. Scatterplot Matrix (All Variables)
+```{r}
+# Create a scatterplot matrix with species coloring
+ggpairs(
+  penguins_clean,
+  columns = c("bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"),
+  mapping = aes(color = species, alpha = 0.7),
+  upper = list(continuous = wrap("cor", size = 3))  # Show correlation coefficients
+) +
+  labs(title = "Penguin Morphology Scatterplot Matrix") +
+  theme(axis.text = element_text(size = 6))  # Adjust font size
+
+
+```
+#4. Create a reordered correlation matrix visualization. What does the visualizations show?
+
+```{r}
+library(tidyverse)
+library(corrplot)
+
+# Select numeric variables and compute correlations
+cor_matrix <- penguins %>%
+  select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g) %>%
+  na.omit() %>%
+  cor()
+
+# Reorder by hierarchical clustering
+ord <- corrMatOrder(cor_matrix, order = "hclust")
+reordered_cor_matrix <- cor_matrix[ord, ord]
+```
+
+```{r}
+corrplot(
+  reordered_cor_matrix,
+  method = "color",         
+  type = "upper",           # Show upper triangle
+  order = "hclust",         # Cluster variables
+  addCoef.col = "black",    # Add correlation coefficients
+  tl.col = "darkblue",      # Variable label color
+  tl.srt = 45,              # Rotate labels 45°
+  title = "Reordered Correlation Matrix (Clustered)"
+)
+```
+
+
+
+
+
+
+
+
+
+
+

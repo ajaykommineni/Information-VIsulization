@@ -1,0 +1,189 @@
+---
+title: "WeekThreeAssignment"
+author: "John Zavgren"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Exercise 1
+#Split the data into a training and test set.
+Using the caret package, I prepared the Palmer Penguins dataset for classification modeling in this exercise.  Prior to accessing the penguins dataset, which contains characteristics like species, bill length, and flipper length, I loaded the palmerpenguins and caret libraries.
+```{r}
+# Load required packages
+library(palmerpenguins)  
+# Contains penguin morphometric data
+library(caret)          
+# For createDataPartition() and ML workflows
+
+# Load and inspect data
+data(penguins)
+str(penguins)           
+# Check structure: species, measurements for detailed analysis.
+
+# Data cleaning - to remove incomplete cases
+penguins_prepared <- na.omit(penguins) 
+# To ensure robustness in the analysis that follows, 
+#The dataset is cleaned by deleting rows with missing values using the na.omit function.
+
+# Create reproducible 77/23 train-test split
+set.seed(120)  # Fix random number generator for reproducibility
+sample_index <- createDataPartition(
+  penguins_prepared$species, 
+  p = 0.77,            # 77% training, 23% testing
+  list = FALSE
+)  
+# Creating  partitioned datasets
+penguin_train <- penguins_prepared[sample_index, ]   
+# Assign the designated training indices to extract the training set from the prepared data.
+penguin_test  <- penguins_prepared[-sample_index, ]  
+# The complement of the training index set is used to form the test set.
+# we need to ensure no overlap and providing a clear basis for model validation.
+# Verify class distribution
+prop.table(table(penguin_train$species))  # Training proportions
+prop.table(table(penguin_test$species))   # Should match closely
+```
+#Exercise 2
+#Create an rpart decision tree to predict the species. You will have to deal with missing values.
+It makes use of the rpart package for recursive partitioning.
+A technique for creating decision trees that learn basic decision rules derived from the properties of the data to forecast the value of a target variable.  
+This tree is then graphically displayed using the rpart.plot function, which improves comprehension of the model's decision-making process.
+
+```{r}
+#It makes use of the `rpart` package for recursive partitioning.
+#A technique for creating decision trees that learn basic decision rules derived from the properties of the data to forecast the value of a target variable.  
+#This tree is then graphically displayed using the `rpart.plot` function, which improves comprehension of the model's decision-making process.
+
+# Decision Tree Classification
+library(rpart)        
+# For recursive partitioning (decision trees)
+library(rpart.plot)   
+# For visualizing decision trees
+
+# Train classification tree model
+predictive_tree <- rpart(
+  species ~ .,               
+  # Predict species using all other variables
+  data = penguin_train,      
+  # Use our pre-processed training data
+  method = "class"           
+  # Specify classification (not regression)
+)
+
+# Visualize the decision tree
+rpart.plot(predictive_tree,
+           main = "Penguin Species Classification Tree",  # Plot title
+           box.palette = "Blues",       
+           shadow.col = "gray",          
+           nn = TRUE)                    
+# This function plots the decision tree, detailing the node splits and the criteria used, 
+#enhancing understanding of the model structure.
+
+
+```
+#Exercise 3
+#Experiment with setting minsplit for rpart and make sure tuneLength is at least 5. Discuss the model selection process (hyperparameter tuning) and what final model was chosen.
+#Using the training section of the penguins dataset, a decision tree model was constructed and adjusted in this step.  
+To guarantee a reliable assessment of model performance, I started by establishing the resampling approach using trainControl() with 10-fold cross-validation repeated three times.  Then, using expand.grid(), I made a hyperparameter grid to test several values of the complexity parameter cp, which ranged from 0.02 to 0.1.
+I fit the model using the "rpart" approach for decision trees with train(), defining the cross-validation controls and tuning grid. To enable the tree to take splits into account even with little data subsets, I additionally set minsplit = 2 in rpart.control(). In order to maximize the model's complexity and make sure the tree didn't overfit or underfit the data, this phase was crucial.
+
+```{r}
+# Hyperparameter Tuning Setup
+tune_control <- trainControl(
+  method = "repeatedcv",  # 10-fold CV repeated 3 times
+  repeats = 3,           # Improves reliability of estimates
+  number = 10,           # Number of folds
+  savePredictions = TRUE # Stores predictions for analysis
+)
+
+# Complexity Parameter Grid
+grid_setup <- expand.grid(
+  cp = seq(0.02, 0.1, by = 0.02)  # Test 5 cp values (0.02-0.1)
+)
+
+# Train Model with Tuning
+# Configure and run the model training process with the specified hyperparameters.
+final_tree <- train(
+  species ~ .,
+  data = penguin_train,
+  method = "rpart",
+  trControl = tune_control,
+  tuneGrid = grid_setup,
+  control = rpart.control(
+    minsplit = 2,        # Minimum 2 obs to attempt split
+    minbucket = 1,       # Minimum 1 obs in terminal nodes
+    xval = 0             # Disable internal x-validation (using caret's)
+  )
+)
+
+# Model Evaluation
+print(final_tree)
+# Display the results from the model tuning to review the performance metrics across different values of the complexity parameter, aiding in selection of the best model configuration.
+
+```
+
+#Exercise 4
+#Visualize the tree and discuss what the splits mean.
+The following R code is intended to display a refined decision tree model saved as final_tree$finalModel. In order to help visualize the decision tree and help comprehend how the model predicts penguin species depending on specific features, it makes use of the rpart.plot function. The rpart package, which is frequently used to create and visualize decision trees, contains this function.
+
+```{r}
+# Visualize the tuned decision tree model
+rpart.plot(final_tree$finalModel,
+           main = "Optimized Penguin Species Classifier",
+           type = 4,                 # Detailed node display
+           extra = 104,              # Show class proportions & sample size
+           box.palette = "GnBu",     # Color-blind friendly palette
+           fallen.leaves = TRUE,     # Align terminal nodes
+           shadow.col = "gray60",    # Add depth perception
+           nn = TRUE)                # Display node numbers
+#Here, a visual representation of the decision tree is produced using the rpart.plot function. With the headline giving background information on the model's improvement, this graphic aids in comprehending how various predictors affect the classification of species.
+```
+#Exercise 5
+#Calculate the variable importance from the fitted model. What variables are the most important? What variables do not matter?
+I used the trained decision tree model (final_tree) in this exercise to conduct a variable significance analysis. I evaluated each predictor's contribution to the penguin species classification using the varImp() tool.Based on the underlying decision-making structure of the model, namely the frequency and efficacy of each variable's use in data splitting, this function determines relevance ratings.  I could see which features—like body mass, flipper length, or beak length—had the biggest impact on the model's predictions by printing importance_analysis, which gave me an ordered list of features.
+```{r}
+# Calculate and visualize variable importance
+importance_metrics <- varImp(final_tree, scale = TRUE)  # Get scaled importance scores (0-100)
+
+# Display sorted importance scores
+print(importance_metrics)  # Shows each variable's relative contribution
+# Visualize as a horizontal bar plot
+
+```
+
+#Exercise 6
+#Use the test set to evaluate the generalization error and accuracy.
+Based on the test set, I created species predictions using the predict() function. I then used confusionMatrix() to compare these predictions to the actual species labels. 
+Accuracy, sensitivity, specificity, and other classification findings are all thoroughly evaluated by this function.
+I used eval_matrix$overall['Accuracy'] to extract and print only the model's overall accuracy. 
+The model's ability to generalize to new data is shown by this statistic. 
+Based on the chosen features and tuning parameters from previous exercises, a high accuracy score shows that the model is successful in classifying penguin species.
+
+
+```{r}
+# Use the tuned model to predict species on the test set and evaluate its accuracy.
+# Generate test set predictions
+final_pred <- predict(final_tree, 
+                      newdata = penguin_test,
+                      type = "raw")  # Returns class predictions
+
+# Compute comprehensive evaluation metrics
+eval_metrics <- confusionMatrix(
+  data = final_pred,
+  reference = penguin_test$species,  # True labels
+  mode = "everything"               # Compute all available metrics
+)
+
+# Print detailed class-level metrics
+print(eval_metrics$byClass[, c("Recall", "Precision", "F1")])
+
+
+```
+
+
+
+
